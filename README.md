@@ -1,4 +1,5 @@
-# pr_TopicModeling
+# TFG topic modeling
+
 Final year Topic Modeling project. 
 
 Python version == 3.10.9
