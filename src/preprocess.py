@@ -20,7 +20,7 @@ import gensim
 import regex
 import nltk
 import spacy
-
+import pickle
 
 # functions for text preprocessing
 stop_words = set(stopwords.words("english"))
@@ -98,10 +98,13 @@ BIGRAMS Y TRIGRAMS SIGUIENDO LO SIGUIENTE:
 FILTRAR POR 1% Y 99% DURANTE PROCESO tf idf  
 """
 
-sp = spacy.load('en_core_web_sm')
+
+"""sp = spacy.load('en_core_web_sm')
 def final(text): 
     final_text = []
     doc = sp(text)
+    
+    options = ["NOUN", "PROPN"]
     
     for i in range(len(doc)): 
         # get NOUNS
@@ -135,4 +138,233 @@ def final(text):
                
         except Exception as e:
             pass
+    return " ".join(final_text)"""
+    
+    
+
+sp1 = spacy.load('en_core_web_sm')
+def final(text): 
+    final_text = []
+    doc = sp1(text)
+    clases = {
+        "noun-noun": [],
+        "noun-adjective-noun": [],
+        "noun-noun-noun": [],
+        "noun-preposition-noun": [],
+        "adjective-noun": [],
+        "adjective-adjective-noun": [],
+        "adjective-noun-noun": []}
+    
+    options = ["NOUN", "PROPN"]
+    
+    for i in range(len(doc)): 
+        # get NOUNS
+        if doc[i].pos_ in options: 
+            final_text.append(doc[i].lemma_) # select nouns
+            
+            try: 
+                if doc[i+1].pos_ in options: 
+                    final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_) #noun - noun                   
+                    clases["noun-noun"].append(doc[i].lemma_ + "_"+doc[i+1].lemma_) 
+
+                    if doc[i+2].pos_ in options:  
+                        final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_) # noun - noun - noun
+                        clases["noun-noun-noun"].append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_) 
+                     
+                elif doc[i+1].pos_=="ADJ" and doc[i+2].pos_ in options: 
+                    final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_)  # noun - adj - noun
+                    clases["noun-adjective-noun"].append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_) 
+                    
+                elif doc[i+1].pos_=="ADP" and doc[i+2].pos_ in options: 
+                    final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_)  # noun - preposition - noun
+                    clases["noun-preposition-noun"].append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_) 
+            except Exception as e:
+                pass
+            
+             
+        elif doc[i].pos_=="ADJ": 
+            try: 
+                if doc[i+1].pos_ in options: 
+                    final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_) # adjetive - noun
+                    clases["adjective-noun"].append(doc[i].lemma_ + "_"+doc[i+1].lemma_) 
+                    if doc[i+2].pos_ in options: 
+                        final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_) #adjective-noun-noun
+                        clases["adjective-noun-noun"].append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_) 
+                elif doc[i+1].pos_=="ADJ" and doc[i+2].pos_ in options: 
+                    final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_) #adjective-adjective-noun
+                    clases["adjective-adjective-noun"].append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_) 
+
+  
+            except Exception as e:
+                pass
+        
+
+
     return " ".join(final_text)
+
+"""
+    noun
+    noun-noun
+    noun-noun-noun
+    noun-adjective-noun
+    noun-preposition-noun (NOUN - ADP - NOUN)
+    
+    adjective-noun (ADJ NOUN)
+    adjective-adjective-noun
+    adjective-noun-noun
+
+    
+    """
+    
+
+spacy_model = spacy.load('en_core_web_sm')
+def finalfilter(text): 
+    final_text = []
+    doc = spacy_model(text)
+
+    options = ["NOUN", "PROPN"]
+    
+    for i in range(len(doc)): 
+        # get NOUNS
+        if doc[i].pos_ in options: 
+            final_text.append(doc[i].lemma_) # select nouns
+            
+            try: 
+                if doc[i+1].pos_ in options: 
+                    final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_) #noun - noun                   
+
+                    if doc[i+2].pos_ in options:  
+                        final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_) # noun - noun - noun
+                     
+                if doc[i+1].pos_=="ADJ" and doc[i+2].pos_ in options: 
+                    final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_)  # noun - adj - noun
+                    
+                if doc[i+1].pos_=="ADP" and doc[i+2].pos_ in options: 
+                    final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_)  # noun - preposition - noun
+            except Exception as e:
+                pass
+            
+             
+        if doc[i].pos_=="ADJ": 
+            try: 
+                if doc[i+1].pos_ in options: 
+                    final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_) # adjetive - noun
+                    if doc[i+2].pos_ in options: 
+                        final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_) #adjective-noun-noun
+                if doc[i+1].pos_=="ADJ" and doc[i+2].pos_ in options: 
+                    final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_) #adjective-adjective-noun
+  
+            except Exception as e:
+                pass
+        
+
+
+    return " ".join(final_text)
+
+spacy_model = spacy.load('en_core_web_sm')
+def finalfilter2(text): 
+    final_text = []
+    doc = spacy_model(text)
+
+    options = ["NOUN"]
+    
+    for i in range(len(doc)): 
+        # get NOUNS
+        if doc[i].pos_ in options: 
+            final_text.append(doc[i].lemma_) # select nouns
+            
+            try: 
+                if doc[i+1].pos_ in options: 
+                    final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_) #noun - noun                   
+
+                    if doc[i+2].pos_ in options:  
+                        final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_) # noun - noun - noun
+                     
+                if doc[i+1].pos_=="ADJ" and doc[i+2].pos_ in options: 
+                    final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_)  # noun - adj - noun
+                    
+                if doc[i+1].pos_=="ADP" and doc[i+2].pos_ in options: 
+                    final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_)  # noun - preposition - noun
+            except Exception as e:
+                pass
+            
+             
+        if doc[i].pos_=="ADJ": 
+            try: 
+                if doc[i+1].pos_ in options: 
+                    final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_) # adjetive - noun
+                    if doc[i+2].pos_ in options: 
+                        final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_) #adjective-noun-noun
+                if doc[i+1].pos_=="ADJ" and doc[i+2].pos_ in options: 
+                    final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_) #adjective-adjective-noun
+  
+            except Exception as e:
+                pass
+        
+
+
+    return " ".join(final_text)
+
+sp = spacy.load('en_core_web_md')
+def final2(text): 
+    
+    final_text = []
+    doc = sp(text)
+    clases = {
+        "noun-noun": [],
+        "noun-adjective-noun": [],
+        "noun-noun-noun": [],
+        "noun-preposition-noun": [],
+        "adjective-noun": [],
+        "adjective-adjective-noun": [],
+        "adjective-noun-noun": []}
+    
+    options = ["NOUN"]
+    candidates = ["trump", "biden", "sanders", "buttigieg", "warren", "bloomberg"]
+    for i in range(len(doc)): 
+        
+        if doc[i].lemma_ not in candidates: 
+            # get NOUNS
+            if doc[i].pos_ in options: 
+                final_text.append(doc[i].lemma_) # select nouns
+
+                try: 
+                    if doc[i+1].pos_ in options: 
+                        final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_) #noun - noun                   
+                        clases["noun-noun"].append(doc[i].lemma_ + "_"+doc[i+1].lemma_) 
+
+                        if doc[i+2].pos_ in options:  
+                            final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_) # noun - noun - noun
+                            clases["noun-noun-noun"].append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_) 
+
+                    elif doc[i+1].pos_=="ADJ" and doc[i+2].pos_ in options: 
+                        final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_)  # noun - adj - noun
+                        clases["noun-adjective-noun"].append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_) 
+
+                    elif doc[i+1].pos_=="ADP" and doc[i+2].pos_ in options: 
+                        final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_)  # noun - preposition - noun
+                        clases["noun-preposition-noun"].append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_) 
+                except Exception as e:
+                    pass
+
+
+            elif doc[i].pos_=="ADJ": 
+                try: 
+                    if doc[i+1].pos_ in options: 
+                        final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_) # adjetive - noun
+                        clases["adjective-noun"].append(doc[i].lemma_ + "_"+doc[i+1].lemma_) 
+                        if doc[i+2].pos_ in options: 
+                            final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_) #adjective-noun-noun
+                            clases["adjective-noun-noun"].append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_) 
+                    elif doc[i+1].pos_=="ADJ" and doc[i+2].pos_ in options: 
+                        final_text.append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_) #adjective-adjective-noun
+                        clases["adjective-adjective-noun"].append(doc[i].lemma_ + "_"+doc[i+1].lemma_ +"_" +doc[i+2].lemma_) 
+
+
+                except Exception as e:
+                    pass
+            
+
+       
+    return " ".join(final_text)
+
